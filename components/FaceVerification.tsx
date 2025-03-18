@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button"
 import { UserPlus, User, RefreshCcw, Camera, AlertTriangle } from "lucide-react"
 import Webcam from "react-webcam"
 import * as facialVerification from "@/lib/facial-verification"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function FaceVerification({ videoActive }: { videoActive: boolean }) {
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null)
@@ -12,6 +22,13 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
   const [isInitializing, setIsInitializing] = useState(true)
   const [isInitialized, setIsInitialized] = useState(false)
   const [initializationError, setInitializationError] = useState<string | null>(null)
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState<{
+    title: string;
+    description: string;
+    action?: () => void;
+    actionText?: string;
+  }>({ title: "", description: "" })
   const webcamRef = useRef<Webcam>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
@@ -266,12 +283,20 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
   // Enroll face
   const enrollFace = async () => {
     if (!isInitialized) {
-      setVerificationStatus("Facial verification not initialized. Please refresh the page.");
+      setAlertMessage({
+        title: "System Not Ready",
+        description: "Facial verification not initialized. Please refresh the page."
+      });
+      setAlertOpen(true);
       return;
     }
 
     if (!videoActive) {
-      setVerificationStatus("Please enable your camera first.");
+      setAlertMessage({
+        title: "Camera Required",
+        description: "Please enable your camera first."
+      });
+      setAlertOpen(true);
       return;
     }
 
@@ -281,7 +306,14 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
       // Check if there are already enrolled faces
       const storedFacesCount = facialVerification.getStoredFacesCount();
       if (storedFacesCount > 0) {
-        throw new Error('You are already registered! Please use "Continue Application" instead of creating a new application.');
+        setAlertMessage({
+          title: "Already Registered",
+          description: "You are already registered! Please use 'Continue Application' to access your existing application.",
+          action: authenticateFace,
+          actionText: "Continue Application"
+        });
+        setAlertOpen(true);
+        return;
       }
       
       setVerificationStatus("Starting enrollment...");
@@ -306,31 +338,30 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
         throw new Error('Enrollment failed. Please try again with better lighting and position your face in the center of the camera view.');
       }
       
-      setVerificationStatus(`
-        Enrollment successful!
-        Face ID: ${faceId}
-        This ID will be associated with your loan application.
-        
-        You can now click "Continue Application" when returning.
-      `);
+      setAlertMessage({
+        title: "Enrollment Successful",
+        description: `Face ID: ${faceId}\nThis ID will be associated with your loan application.\n\nYou can now click "Continue Application" when returning.`,
+        action: authenticateFace,
+        actionText: "Continue Application"
+      });
+      setAlertOpen(true);
     } catch (error: any) {
       console.error("Enrollment error:", error);
       
       if (error.message && error.message.includes("already registered")) {
-        // Special styling for the "already registered" error
-        setVerificationStatus(error.message);
-        
-        // Display a clearer UI message with appropriate styling
-        const verificationDiv = document.querySelector('[data-verification-status]');
-        if (verificationDiv) {
-          verificationDiv.classList.add('bg-amber-50', 'border-amber-200');
-        }
+        setAlertMessage({
+          title: "Already Registered",
+          description: "You are already registered! Please use 'Continue Application' to access your existing application.",
+          action: authenticateFace,
+          actionText: "Continue Application"
+        });
       } else {
-        setVerificationStatus(`Enrollment failed: ${error.message || 'Please try again with better lighting'}`);
+        setAlertMessage({
+          title: "Enrollment Failed",
+          description: error.message || "Please try again with better lighting and position your face in the center of the camera view."
+        });
       }
-      
-      // We don't need this anymore as it's handled in the facial-verification service
-      // facialVerification.dispatchVerificationEvent('enroll', false);
+      setAlertOpen(true);
     } finally {
       setIsProcessing(false);
     }
@@ -339,12 +370,20 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
   // Authenticate face
   const authenticateFace = async () => {
     if (!isInitialized) {
-      setVerificationStatus("Facial verification not initialized. Please refresh the page.");
+      setAlertMessage({
+        title: "System Not Ready",
+        description: "Facial verification not initialized. Please refresh the page."
+      });
+      setAlertOpen(true);
       return;
     }
 
     if (!videoActive) {
-      setVerificationStatus("Please enable your camera first.");
+      setAlertMessage({
+        title: "Camera Required",
+        description: "Please enable your camera first."
+      });
+      setAlertOpen(true);
       return;
     }
 
@@ -355,7 +394,14 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
       // Get stored faces count
       const storedFacesCount = facialVerification.getStoredFacesCount();
       if (storedFacesCount === 0) {
-        throw new Error('No faces enrolled yet. Please click "New Application" to register your face first.');
+        setAlertMessage({
+          title: "Not Registered",
+          description: "You haven't registered yet! Please click 'New Application' to register your face first.",
+          action: enrollFace,
+          actionText: "Register Now"
+        });
+        setAlertOpen(true);
+        return;
       }
       
       // Verify video is active and streaming
@@ -382,34 +428,28 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
         throw new Error(`Face verification failed. Please ensure good lighting and look directly at the camera, or click "New Application" if you haven't registered before.`);
       }
       
-      setVerificationStatus(`
-        Authentication successful! 
-        Welcome back, Applicant ID: ${matchResult.userData.applicantId}
-        Loan Application: ${matchResult.userData.loanApplicationId}
-        Match confidence: ${(matchResult.score * 100).toFixed(1)}%
-        
-        You can now proceed with your loan application.
-      `);
+      setAlertMessage({
+        title: "Authentication Successful",
+        description: `Welcome back!\nApplicant ID: ${matchResult.userData.applicantId}\nLoan Application: ${matchResult.userData.loanApplicationId}\nMatch confidence: ${(matchResult.score * 100).toFixed(1)}%\n\nYou can now proceed with your loan application.`
+      });
+      setAlertOpen(true);
     } catch (error: any) {
       console.error("Authentication error:", error);
       
-      // Provide a clearer message for unregistered users
       if (error.message && error.message.includes("No faces enrolled")) {
-        setVerificationStatus(`You haven't registered yet!
-
-Please click "New Application" to register your face before continuing.`);
-        
-        // Display a clearer UI message with an icon
-        const verificationDiv = document.querySelector('[data-verification-status]');
-        if (verificationDiv) {
-          verificationDiv.classList.add('bg-amber-50', 'border-amber-200');
-        }
+        setAlertMessage({
+          title: "Not Registered",
+          description: "You haven't registered yet! Please click 'New Application' to register your face first.",
+          action: enrollFace,
+          actionText: "Register Now"
+        });
       } else {
-        setVerificationStatus(`Authentication failed: ${error.message || 'Face not recognized'}`);
+        setAlertMessage({
+          title: "Authentication Failed",
+          description: error.message || "Face not recognized. Please try again or click 'New Application' to register."
+        });
       }
-      
-      // We don't need this anymore as it's handled in the facial-verification service
-      // facialVerification.dispatchVerificationEvent('authenticate', false);
+      setAlertOpen(true);
     } finally {
       setIsProcessing(false);
     }
@@ -427,6 +467,22 @@ Please click "New Application" to register your face before continuing.`);
 
   return (
     <div className="border rounded-lg shadow-sm overflow-hidden h-full">
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{alertMessage.title}</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-line">{alertMessage.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            {alertMessage.action && (
+              <AlertDialogAction onClick={alertMessage.action}>
+                {alertMessage.actionText || "Continue"}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="p-6 border-b">
         <h3 className="text-lg font-semibold">Facial Verification</h3>
       </div>
