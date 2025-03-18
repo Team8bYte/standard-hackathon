@@ -4,7 +4,9 @@
 
 A secure application for verifying user identity during the loan application process using facial recognition.
 
-![Application Screenshot](screenshot.png)
+![icon](https://github.com/user-attachments/assets/9c2b9e8e-0a47-4ca8-9a13-e46fe4936101)
+
+
 
 ## Features
 
