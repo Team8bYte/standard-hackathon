@@ -109,3 +109,76 @@ Developed by Team8bYte for the Standard Hackathon
 ## License
 
 This project is MIT licensed.
+
+# Video Guidance System
+
+This system provides an interactive video-based learning experience with voice-recorded responses and AI feedback.
+
+## Prerequisites
+
+1. FFmpeg for audio processing
+2. OpenAI Whisper for speech-to-text conversion
+3. Node.js and npm
+
+## Installation
+
+1. Install FFmpeg:
+
+   ```bash
+   # macOS (using Homebrew)
+   brew install ffmpeg
+
+   # Ubuntu/Debian
+   sudo apt-get install ffmpeg
+   ```
+
+2. Install Whisper:
+
+   ```bash
+   pip install openai-whisper
+   ```
+
+3. Install Node.js dependencies:
+   ```bash
+   npm install
+   ```
+
+## Setup
+
+1. Place your video segments in the following directory structure:
+
+   ```
+   public/videos/segments/video1/
+   ├── segment_1.mp4
+   ├── segment_2.mp4
+   ```
+
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Features
+
+-  Sequential video playback with questions
+-  Voice recording for answers
+-  Automatic speech-to-text conversion
+-  AI-powered feedback on responses
+-  Progress tracking across segments
+-  Manual text editing capability
+
+## Usage
+
+1. Navigate to the manager dashboard
+2. Watch each video segment
+3. Record your answers using the microphone button
+4. Edit transcribed text if needed
+5. Get AI feedback on your responses
+6. Progress through all segments and questions
+
+## Technical Details
+
+-  Uses the Web Audio API for voice recording
+-  Implements OpenAI Whisper for speech recognition
+-  Processes audio through a Next.js API route
+-  Provides real-time video playback controls
