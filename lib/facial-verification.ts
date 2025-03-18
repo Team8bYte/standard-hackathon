@@ -26,8 +26,13 @@ export type MatchResult = {
   matched?: boolean; // Whether the match meets the threshold
 };
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
 // Use localStorage for persistent storage within the browser session
 function getStoredFaces(): StoredFace[] {
+  if (!isBrowser) return [];
+  
   try {
     const facesJson = localStorage.getItem('storedFaces');
     if (facesJson) {
@@ -45,6 +50,8 @@ function getStoredFaces(): StoredFace[] {
 }
 
 function saveStoredFaces(faces: StoredFace[]): void {
+  if (!isBrowser) return;
+  
   try {
     // Convert Float32Array to regular array for storage
     const facesToStore = faces.map(face => ({

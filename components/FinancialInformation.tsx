@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Video, StopCircle, PlayCircle, RefreshCcw, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Video, StopCircle, PlayCircle, RefreshCcw, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,9 +33,14 @@ type Answer = {
   answer: string;
   confidence: number;
   needsRerecording?: boolean;
+  manualAnswer?: string;
 }
 
-export default function FinancialInformation() {
+type FinancialInformationProps = {
+  onComplete?: () => void;
+};
+
+export default function FinancialInformation({ onComplete }: FinancialInformationProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([])
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
@@ -44,6 +51,8 @@ export default function FinancialInformation() {
   const [alertMessage, setAlertMessage] = useState({ title: "", description: "" })
   const videoRef = useRef<HTMLVideoElement>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
+  const [manualAnswers, setManualAnswers] = useState<{[key: string]: string}>({});
+  const [isComplete, setIsComplete] = useState(false);
 
   // Initialize media recorder
   useEffect(() => {
@@ -166,6 +175,68 @@ export default function FinancialInformation() {
     setAnswers([]);
   };
 
+  // Check if all questions are answered
+  useEffect(() => {
+    const allAnswered = FINANCIAL_QUESTIONS.every(question => {
+      const answer = answers.find(a => a.question === question);
+      return (answer && !answer.needsRerecording) || manualAnswers[question];
+    });
+    setIsComplete(allAnswered);
+  }, [answers, manualAnswers]);
+
+  // Handle manual answer change
+  const handleManualAnswerChange = (question: string, value: string) => {
+    setManualAnswers(prev => ({
+      ...prev,
+      [question]: value
+    }));
+  };
+
+  // Get final answers combining recorded and manual inputs
+  const getFinalAnswers = () => {
+    return FINANCIAL_QUESTIONS.map(question => {
+      const recordedAnswer = answers.find(a => a.question === question);
+      const manualAnswer = manualAnswers[question];
+      
+      if (recordedAnswer && !recordedAnswer.needsRerecording) {
+        return recordedAnswer;
+      }
+      
+      return {
+        question,
+        answer: manualAnswer || "Not provided",
+        confidence: manualAnswer ? 100 : 0,
+        needsRerecording: !manualAnswer
+      };
+    });
+  };
+
+  // Save answers to localStorage
+  const saveAnswers = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('financialAnswers', JSON.stringify(getFinalAnswers()));
+    }
+  };
+
+  // Load saved answers from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedAnswers = localStorage.getItem('financialAnswers');
+      if (savedAnswers) {
+        const parsed = JSON.parse(savedAnswers);
+        setAnswers(parsed.filter((a: Answer) => !a.manualAnswer));
+        setManualAnswers(
+          parsed.reduce((acc: {[key: string]: string}, curr: Answer) => {
+            if (curr.manualAnswer) {
+              acc[curr.question] = curr.manualAnswer;
+            }
+            return acc;
+          }, {})
+        );
+      }
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
@@ -284,35 +355,68 @@ export default function FinancialInformation() {
           <CardHeader>
             <CardTitle>Processed Responses</CardTitle>
             <CardDescription>
-              Review your processed responses. You may need to re-record if any answers are missing or unclear.
+              Review your responses. For any missing or unclear answers, please provide them manually below.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {answers.map((answer, index) => (
-                <div key={index} className="rounded-lg border p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-medium">{answer.question}</h4>
-                      <p className="mt-1 text-sm text-muted-foreground">{answer.answer}</p>
+            <div className="space-y-6">
+              {FINANCIAL_QUESTIONS.map((question, index) => {
+                const answer = answers.find(a => a.question === question);
+                const needsManualInput = !answer || answer.needsRerecording;
+                
+                return (
+                  <div key={index} className="space-y-4">
+                    <div className="rounded-lg border p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <h4 className="font-medium">{question}</h4>
+                          {answer && !answer.needsRerecording ? (
+                            <p className="text-sm text-muted-foreground">{answer.answer}</p>
+                          ) : (
+                            <div className="space-y-2">
+                              <Label htmlFor={`answer-${index}`}>Your Answer</Label>
+                              <Input
+                                id={`answer-${index}`}
+                                value={manualAnswers[question] || ''}
+                                onChange={(e) => handleManualAnswerChange(question, e.target.value)}
+                                placeholder="Type your answer here..."
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {answer && !answer.needsRerecording ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <AlertTriangle className="h-5 w-5 text-amber-500" />
+                        )}
+                      </div>
                     </div>
-                    {answer.needsRerecording ? (
-                      <AlertTriangle className="h-5 w-5 text-amber-500" />
-                    ) : (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    )}
                   </div>
-                  {answer.needsRerecording && (
-                    <p className="mt-2 text-xs text-amber-600">
-                      Please re-record your response to this question
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       )}
+
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          {isComplete 
+            ? "All questions have been answered. You can proceed with your application." 
+            : "Please answer all questions to continue."}
+        </p>
+        <Button
+          onClick={() => {
+            saveAnswers();
+            onComplete?.();
+          }}
+          disabled={!isComplete}
+          className="flex items-center gap-2"
+        >
+          Continue Application
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   )
 } 
