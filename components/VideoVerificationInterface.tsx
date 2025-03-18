@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import FaceVerification from "@/components/FaceVerification"
 import VideoCapture from "@/components/VideoCapture"
+import FinancialInformation from "@/components/FinancialInformation"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, FileCheck, CreditCard, FileText, AlertTriangle, UserPlus, User } from "lucide-react"
 import * as facialVerification from "@/lib/facial-verification"
@@ -282,16 +283,10 @@ export default function VideoVerificationInterface() {
         </div>
       </div>
       
-      {/* Financial Information Step (Placeholder) */}
+      {/* Financial Information Step */}
       {currentStep === 2 && (
-        <div className="mt-8 p-6 border rounded-lg">
-          <h2 className="text-xl font-bold mb-4">Financial Information</h2>
-          <p className="mb-4 text-muted-foreground">
-            This section would collect financial details for your loan application.
-          </p>
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <p className="text-sm">Placeholder for financial information form</p>
-          </div>
+        <div className="mt-8">
+          <FinancialInformation />
         </div>
       )}
       

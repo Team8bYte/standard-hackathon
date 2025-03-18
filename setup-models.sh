@@ -8,53 +8,68 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}===== Downloading face-api.js model files =====${NC}\n"
 
-# Create models directory if it doesn't exist
-if [ ! -d "./public/models" ]; then
-    echo -e "Creating models directory..."
-    mkdir -p ./public/models
-fi
-
-# Change to the models directory
-cd ./public/models
-
-# Base URL for face-api.js model weights
-BASE_URL="https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights"
-
-# Function to download a file with progress indicator
-download_file() {
-    local filename=$1
-    echo -e "${YELLOW}Downloading ${filename}...${NC}"
-    
-    if command -v curl &> /dev/null; then
-        curl -# -O "${BASE_URL}/${filename}"
-    else
-        wget --show-progress "${BASE_URL}/${filename}"
-    fi
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ Downloaded ${filename}${NC}"
-    else
-        echo -e "\nFailed to download ${filename}. Please check your internet connection and try again."
-        exit 1
-    fi
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-# Download SSD MobileNet model (face detection)
-download_file "ssd_mobilenetv1_model-weights_manifest.json"
-download_file "ssd_mobilenetv1_model-shard1"
-download_file "ssd_mobilenetv1_model-shard2"
+# Check if Python is installed
+if ! command_exists python3; then
+    echo "Python 3 is required but not installed. Please install Python 3 and try again."
+    exit 1
+fi
 
-# Download Face Landmark model
-download_file "face_landmark_68_model-weights_manifest.json"
-download_file "face_landmark_68_model-shard1"
+# Check if pip is installed
+if ! command_exists pip3; then
+    echo "pip3 is required but not installed. Please install pip3 and try again."
+    exit 1
+fi
 
-# Download Face Recognition model
-download_file "face_recognition_model-weights_manifest.json"
-download_file "face_recognition_model-shard1"
-download_file "face_recognition_model-shard2"
+# Check if ffmpeg is installed
+if ! command_exists ffmpeg; then
+    echo "ffmpeg is required but not installed."
+    echo "Please install ffmpeg using your package manager:"
+    echo "  - For macOS: brew install ffmpeg"
+    echo "  - For Ubuntu/Debian: sudo apt-get install ffmpeg"
+    echo "  - For Windows: Download from https://ffmpeg.org/download.html"
+    exit 1
+fi
 
-echo -e "\n${GREEN}All model files have been downloaded successfully!${NC}"
-echo -e "Model files are located in: ${YELLOW}./public/models/${NC}"
+# Create models directory if it doesn't exist
+mkdir -p models
+
+# Install Whisper
+echo "Installing Whisper..."
+pip3 install git+https://github.com/openai/whisper.git
+
+# Download face-api.js models
+echo "Downloading face-api.js models..."
+cd models
+
+# List of models to download
+models=(
+    "face_landmark_68_model-weights_manifest.json"
+    "face_landmark_68_model-shard1"
+    "face_recognition_model-weights_manifest.json"
+    "face_recognition_model-shard1"
+    "face_recognition_model-shard2"
+    "tiny_face_detector_model-weights_manifest.json"
+    "tiny_face_detector_model-shard1"
+)
+
+base_url="https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights"
+
+# Download each model
+for model in "${models[@]}"; do
+    if [ ! -f "$model" ]; then
+        echo "Downloading $model..."
+        curl -O "$base_url/$model"
+    else
+        echo "$model already exists, skipping..."
+    fi
+done
+
+echo "Setup complete!"
 
 # Return to the original directory
 cd ../../
