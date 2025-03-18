@@ -38,3 +38,8 @@ next-env.d.ts
 # SSL certificates
 /certificates/*
 !
+
+# Python
+.venv/
+.vscode/
+__pycache__/
