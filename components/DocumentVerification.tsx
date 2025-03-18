@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useOurFormContext } from "@/contexts/FormContext";
 
 type Document = {
   id: string;
@@ -40,7 +41,7 @@ type DocumentVerificationProps = {
 const REQUIRED_DOCUMENTS = [
   {
     type: "aadhaar_card",
-    name: "Aadhar Card",
+    name: "Aadhaar Card",
     description: "Upload your Aadhar card to ease up your application",
     formats: "PNG, JPG, or PDF",
   },
@@ -74,6 +75,8 @@ export default function DocumentVerification({
     description: "",
   });
   const [isComplete, setIsComplete] = useState(false);
+
+  const { updateFormData } = useOurFormContext();
 
   // Check if all required documents are uploaded
   const checkCompletion = useCallback(() => {
@@ -127,7 +130,11 @@ export default function DocumentVerification({
         throw new Error(data.error || "Failed to process document");
       }
 
-      console.log(data);
+      if (type === "aadhaar_card") {
+        updateFormData({ ...data.data });
+      } else if (type === "pan_card") {
+        updateFormData({ pan_number: data.data.pan_number as string });
+      }
       // Update document status to processing
       setDocuments((prev) =>
         prev.map((doc) =>
@@ -343,4 +350,3 @@ export default function DocumentVerification({
     </div>
   );
 }
-

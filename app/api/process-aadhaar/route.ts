@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const inputSource = mindeeClient.docFromPath(tempFilePath);
 
     const customEndpoint = mindeeClient.createEndpoint(
-      "aadharcard",
+      "aadhaar_card",
       "KingBing",
       "1",
     );

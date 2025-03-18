@@ -1,9 +1,31 @@
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { CheckCircle2, FileCheck, User, AlertTriangle, Files } from "lucide-react"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  User,
+  FileText,
+  Save,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,221 +36,234 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { useOurFormContext } from "@/contexts/FormContext";
+import { FINANCIAL_QUESTIONS } from "./FinancialInformation";
 
-type ApplicationData = {
-  userData: {
-    applicantId: string;
-    loanApplicationId: string;
-    timestamp: string;
-  };
-  financialAnswers: Array<{
-    question: string;
-    answer: string;
-    confidence: number;
-  }>;
-  documents: Array<{
-    type: string;
-    name: string;
-    status: string;
-    verifiedAt?: string;
-  }>;
-};
-
-export default function SubmitApplication() {
-  const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+export default function ApplicationForm() {
+  const { formData, updateFormData, updateAnswer } = useOurFormContext();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Load user data
-      const userDataJson = localStorage.getItem('currentUserData');
-      const financialAnswersJson = localStorage.getItem('financialAnswers');
-      const documentsJson = localStorage.getItem('verifiedDocuments');
-
-      if (userDataJson && financialAnswersJson) {
-        setApplicationData({
-          userData: JSON.parse(userDataJson),
-          financialAnswers: JSON.parse(financialAnswersJson),
-          documents: documentsJson ? JSON.parse(documentsJson) : []
-        });
-      }
-    }
+    console.log(formData);
   }, []);
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
+  const handleSave = async () => {
+    setIsSaving(true);
     try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       // Here you would typically send the data to your backend
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated API call
-      
-      // Clear application data from localStorage
-      localStorage.removeItem('financialAnswers');
-      
-      setIsSubmitted(true);
+      console.log("Saving form data:", formData);
+
+      setIsSaved(true);
       setShowDialog(true);
     } catch (error) {
-      console.error('Error submitting application:', error);
+      console.error("Error saving form:", error);
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
-
-  if (!applicationData) {
-    return (
-      <div className="text-center py-8">
-        <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Application Data Not Found</h3>
-        <p className="text-muted-foreground">
-          Please complete the previous steps before submitting your application.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Application Submitted Successfully!</AlertDialogTitle>
+            <AlertDialogTitle>Form Saved Successfully!</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Your loan application has been submitted. We will review your application and contact you soon.
+                  Your application information has been saved. You can continue
+                  editing or submit your application when ready.
                 </p>
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <div className="font-medium">Application Reference:</div>
-                  <div className="text-sm">{applicationData.userData.loanApplicationId}</div>
+                  <div className="font-medium">Application Details:</div>
+                  <div className="text-sm">Name: {formData.full_name}</div>
+                  <div className="text-sm">
+                    Aadhaar: {formData.aadhaar_number}
+                  </div>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => window.location.href = '/'}>
-              Return to Home
+            <AlertDialogAction onClick={() => setShowDialog(false)}>
+              Continue Editing
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Personal Information Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileCheck className="h-5 w-5" />
-            Application Review
+            <User className="h-5 w-5" />
+            Personal Information
           </CardTitle>
           <CardDescription>
-            Review your application details before final submission
+            Enter your personal details for the application
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {/* Applicant Information */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Applicant Information
-              </h3>
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">Applicant ID</p>
-                  <p className="text-sm text-muted-foreground">{applicationData.userData.applicantId}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Application ID</p>
-                  <p className="text-sm text-muted-foreground">{applicationData.userData.loanApplicationId}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-sm font-medium">Started</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(applicationData.userData.timestamp).toLocaleString()}
-                  </p>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) => updateFormData({ full_name: e.target.value })}
+                placeholder="Enter your full name"
+              />
             </div>
 
-            <Separator />
-
-            {/* Document Verification Information */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Files className="h-5 w-5" />
-                Verified Documents
-              </h3>
-              <div className="space-y-3">
-                {applicationData.documents.map((doc, index) => (
-                  <div key={index} className="p-4 bg-muted/30 rounded-lg flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">{doc.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Verified: {doc.verifiedAt ? new Date(doc.verifiedAt).toLocaleString() : 'Pending'}
-                      </p>
-                    </div>
-                    <FileCheck className="h-5 w-5 text-green-500" />
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="aadhaar_number">Aadhaar Number</Label>
+              <Input
+                id="aadhaar_number"
+                value={formData.aadhaar_number}
+                onChange={(e) =>
+                  updateFormData({ aadhaar_number: e.target.value })
+                }
+                placeholder="12-digit Aadhaar number"
+              />
             </div>
 
-            <Separator />
+            <div className="space-y-2">
+              <Label htmlFor="pan_number">PAN Number</Label>
+              <Input
+                id="pan_number"
+                value={formData.pan_number}
+                onChange={(e) => updateFormData({ pan_number: e.target.value })}
+                placeholder="10-digit PAN number"
+              />
+            </div>
 
-            {/* Financial Information */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Financial Information</h3>
-              <ScrollArea className="h-[400px] rounded-md border p-4">
-                <div className="space-y-4">
-                  {applicationData.financialAnswers.map((answer, index) => (
-                    <div key={index} className="p-4 bg-muted/30 rounded-lg">
-                      <p className="font-medium text-sm">{answer.question}</p>
-                      <p className="mt-1 text-sm">{answer.answer}</p>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
+            <div className="space-y-2">
+              <Label htmlFor="date_of_birth">Date of Birth</Label>
+              <Input
+                id="date_of_birth"
+                type="date"
+                value={formData.date_of_birth}
+                onChange={(e) =>
+                  updateFormData({ date_of_birth: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => updateFormData({ gender: value })}
+              >
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                value={formData.address}
+                onChange={(e) => updateFormData({ address: e.target.value })}
+                placeholder="Enter your complete address"
+                className="resize-none"
+                rows={3}
+              />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
-          Please review all information carefully before submitting
-        </p>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button className="flex items-center gap-2" disabled={isSubmitting || isSubmitted}>
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                  Submitting...
-                </>
-              ) : isSubmitted ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  Submitted
-                </>
-              ) : (
-                'Submit Application'
-              )}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Submit Loan Application</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to submit your loan application? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSubmit}>Submit</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      {/* Financial Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Financial Information
+          </CardTitle>
+          <CardDescription>
+            Please answer the following questions about your financial situation
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {FINANCIAL_QUESTIONS.map((question, index) => (
+              <div key={index} className="space-y-2">
+                <Label htmlFor={`question-${index}`}>{question}</Label>
+                <Textarea
+                  id={`question-${index}`}
+                  value={formData.answers[index] || ""}
+                  onChange={(e) => updateAnswer(index, e.target.value)}
+                  placeholder="Type your answer here"
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-between pt-6">
+          <div>
+            {!isSaved && !isSaving && (
+              <p className="text-sm text-amber-500 flex items-center gap-1">
+                <AlertTriangle className="h-4 w-4" />
+                Unsaved changes
+              </p>
+            )}
+            {isSaved && !isSaving && (
+              <p className="text-sm text-green-500 flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4" />
+                All changes saved
+              </p>
+            )}
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button className="flex items-center gap-2" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Information
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Save Application Information
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to save the current information? Make
+                  sure all details are correct.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardFooter>
+      </Card>
     </div>
   );
-} 
+}
