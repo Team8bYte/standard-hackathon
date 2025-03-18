@@ -33,7 +33,9 @@ In today's era, where online banking and loan applications are becoming increasi
 
 ## Architecture Flow 
 
-![Architecture](https://firebasestorage.googleapis.com/v0/b/finsaathai-e0803.firebasestorage.app/o/Architecture_1.jpg?alt=media&token=44da3b1c-e123-41da-b517-e289379abcf9)
+<img src="https://github.com/user-attachments/assets/5f2b0fba-f674-4572-bafc-ce20dd7e4f77" width="400">
+
+&nbsp;  
 
 | **Category**           | **Technologies**                                      |
 |------------------------|------------------------------------------------------|
