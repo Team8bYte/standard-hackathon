@@ -1,73 +1,103 @@
-# Loan Manager
+<div align="center">
 
-## Facial Verification for Bank Loan Applications
+# FinSaathAI ⭐ - Secure AI meets loan management
 
-A secure application for verifying user identity during the loan application process using facial recognition.
+![finsaathai]()
+</div>
 
-![Application Screenshot](screenshot.png)
+View our presentation: [YouTube Presentation Link]
 
-## Features
+FinSaathAI transforms the loan application process with secure facial verification technology. It lets you enjoy a streamlined multi-step loan application process while ensuring security and fraud prevention through advanced facial recognition.
 
--  **Facial Recognition**: Uses face-api.js for secure identity verification
--  **Multi-step Loan Application**: Guides users through the loan application process
--  **Secure Identity Verification**: Prevents fraud in online loan applications
--  **Responsive Design**: Works on desktop and mobile devices
--  **Persistence**: Stores facial data and application progress in localStorage
+> FinSaathAI combines advanced facial recognition technology with powerful loan management tools to transform the online banking experience.
 
-## Technologies Used
+## About Team FinSaathAI
 
--  Next.js 15
--  React 19
--  TypeScript
--  Tailwind CSS
--  face-api.js (for facial recognition)
--  react-webcam (for camera access)
--  shadcn/ui (for UI components)
+FinSaathAI for Standard Hackathon. Our dedicated team members are Team8bYte.
+
+## Why FinSaathAI? 
+In today's era, where online banking and loan applications are becoming increasingly common, we saw an opportunity to bridge the gap between security and user convenience. Our mission is to revolutionize loan application processes by leveraging cutting-edge facial recognition technology to create a secure yet user-friendly experience that brings the best of both worlds together.
+
+![ui](https://firebasestorage.googleapis.com/v0/b/finsaathai-e0803.firebasestorage.app/o/ui.png?alt=media&token=8ae64d2f-ffe4-4a2e-8bdf-76c0ecfd6910)
+<br> 
+
+## Key Features
+
+- **Facial Recognition**: Uses face-api.js for secure identity verification
+- **Multi-step Loan Application**: Guides users through the loan application process
+- **Secure Identity Verification**: Prevents fraud in online loan applications
+- **Responsive Design**: Works on desktop and mobile devices
+- **Persistence**: Stores facial data and application progress in localStorage
+- **Video Guidance System**: Interactive video-based learning experience
+
+## Architecture Flow 
+
+![Architecture](https://firebasestorage.googleapis.com/v0/b/finsaathai-e0803.firebasestorage.app/o/Architecture_1.jpg?alt=media&token=44da3b1c-e123-41da-b517-e289379abcf9)
+
+| **Category**           | **Technologies**                                      |
+|------------------------|------------------------------------------------------|
+| **Frontend**          | Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui         |
+| **Backend & Deployment** | Node.js, FFmpeg, Web Audio API     |
+| **AI & Media Processing** | face-api.js, react-webcam, OpenAI Whisper |  
+
+
+## FinSaathAI Documentation
+
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Facial Verification System](#facial-verification-system)
+- [Video Guidance System](#video-guidance-system)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+> [!WARNING]  
+> You need HTTPS setup for reliable camera access to be able to run the application. 
 
 ## Getting Started
 
 ### Prerequisites
 
--  Node.js 18.17 or later
--  npm or yarn
--  For HTTPS: mkcert (recommended for camera access)
+- Node.js 18.17 or later
+- npm or yarn
+- For HTTPS: mkcert (recommended for camera access)
+- FFmpeg for audio processing
+- OpenAI Whisper for speech-to-text conversion
 
 ### Installation
 
 1. Clone the repository:
-
-```bash
-git clone https://github.com/Team8bYte/standard-hackathon.git
-cd standard-hackathon
-```
+   ```bash
+   git clone https://github.com/Team8bYte/standard-hackathon.git
+   cd standard-hackathon
+   ```
 
 2. Install dependencies:
-
-```bash
-npm install
-# or
-yarn install
-```
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
 3. Download the required face-api.js models:
-
-```bash
-npm run setup-models
-```
+   ```bash
+   npm run setup-models
+   ```
 
 4. Set up HTTPS for local development (recommended for camera access):
-
-```bash
-npm run setup-https
-```
+   ```bash
+   npm run setup-https
+   ```
 
 5. Start the development server with HTTPS:
-
-```bash
-npm run dev:https
-```
+   ```bash
+   npm run dev:https
+   ```
 
 6. Open [https://localhost:3000](https://localhost:3000) in your browser.
+
+---
 
 ## Facial Verification System
 
@@ -82,92 +112,30 @@ This application uses face-api.js, a JavaScript API for face detection and recog
 
 1. User enables their camera
 2. For new applications:
-   -  User clicks "New Application"
-   -  System captures and analyzes their face
-   -  A unique face ID is generated and associated with the loan application
-   -  User data is stored in localStorage for persistence
+   - User clicks "New Application"
+   - System captures and analyzes their face
+   - A unique face ID is generated and associated with the loan application
+   - User data is stored in localStorage for persistence
 3. For returning applicants:
-   -  User clicks "Continue Application"
-   -  System matches their face against stored descriptors
-   -  If verified, they can continue their loan application
-   -  A match confidence score is displayed to the user
+   - User clicks "Continue Application"
+   - System matches their face against stored descriptors
+   - If verified, they can continue their loan application
+   - A match confidence score is displayed to the user
 
-## Troubleshooting
-
-If you encounter any issues:
-
--  Ensure you're using HTTPS for reliable camera access
--  Check browser permissions for camera access
--  Position your face properly in good lighting
--  Try using Chrome or Firefox if you experience issues
--  Check the browser console for any specific error messages
-
-## Team
-
-Developed by Team8bYte for the Standard Hackathon
-
-## License
-
-This project is MIT licensed.
-
-# Video Guidance System
+## Video Guidance System
 
 This system provides an interactive video-based learning experience with voice-recorded responses and AI feedback.
 
-## Prerequisites
+### Features
 
-1. FFmpeg for audio processing
-2. OpenAI Whisper for speech-to-text conversion
-3. Node.js and npm
+- Sequential video playback with questions
+- Voice recording for answers
+- Automatic speech-to-text conversion
+- AI-powered feedback on responses
+- Progress tracking across segments
+- Manual text editing capability
 
-## Installation
-
-1. Install FFmpeg:
-
-   ```bash
-   # macOS (using Homebrew)
-   brew install ffmpeg
-
-   # Ubuntu/Debian
-   sudo apt-get install ffmpeg
-   ```
-
-2. Install Whisper:
-
-   ```bash
-   pip install openai-whisper
-   ```
-
-3. Install Node.js dependencies:
-   ```bash
-   npm install
-   ```
-
-## Setup
-
-1. Place your video segments in the following directory structure:
-
-   ```
-   public/videos/segments/video1/
-   ├── segment_1.mp4
-   ├── segment_2.mp4
-   ```
-
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-## Features
-
--  Sequential video playback with questions
--  Voice recording for answers
--  Automatic speech-to-text conversion
--  AI-powered feedback on responses
--  Progress tracking across segments
--  Manual text editing capability
-
-## Usage
+### Usage
 
 1. Navigate to the manager dashboard
 2. Watch each video segment
@@ -176,9 +144,20 @@ This system provides an interactive video-based learning experience with voice-r
 5. Get AI feedback on your responses
 6. Progress through all segments and questions
 
-## Technical Details
+## Troubleshooting
 
--  Uses the Web Audio API for voice recording
--  Implements OpenAI Whisper for speech recognition
--  Processes audio through a Next.js API route
--  Provides real-time video playback controls
+If you encounter any issues:
+
+- Ensure you're using HTTPS for reliable camera access
+- Check browser permissions for camera access
+- Position your face properly in good lighting
+- Try using Chrome or Firefox if you experience issues
+- Check the browser console for any specific error messages
+
+## Team
+
+Developed by Team8bYte for the Standard Hackathon
+
+## License
+
+This project is MIT licensed.
