@@ -1,0 +1,7 @@
+opencv-python
+pyaudio
+numpy
+faster-whisper
+moviepy
+ffmpeg-python
+torch
