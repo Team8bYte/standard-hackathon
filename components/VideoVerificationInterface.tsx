@@ -117,6 +117,7 @@ export default function VideoVerificationInterface() {
     setVerificationComplete(false);
     setUserData(null);
     setHasEnrolledFaces(false);
+    setCurrentStep(1);
     localStorage.removeItem('currentUserData');
   };
 

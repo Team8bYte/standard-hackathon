@@ -277,6 +277,13 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
 
     try {
       setIsProcessing(true);
+      
+      // Check if there are already enrolled faces
+      const storedFacesCount = facialVerification.getStoredFacesCount();
+      if (storedFacesCount > 0) {
+        throw new Error('You are already registered! Please use "Continue Application" instead of creating a new application.');
+      }
+      
       setVerificationStatus("Starting enrollment...");
       
       // Verify video is active and streaming
@@ -308,7 +315,19 @@ export default function FaceVerification({ videoActive }: { videoActive: boolean
       `);
     } catch (error: any) {
       console.error("Enrollment error:", error);
-      setVerificationStatus(`Enrollment failed: ${error.message || 'Please try again with better lighting'}`);
+      
+      if (error.message && error.message.includes("already registered")) {
+        // Special styling for the "already registered" error
+        setVerificationStatus(error.message);
+        
+        // Display a clearer UI message with appropriate styling
+        const verificationDiv = document.querySelector('[data-verification-status]');
+        if (verificationDiv) {
+          verificationDiv.classList.add('bg-amber-50', 'border-amber-200');
+        }
+      } else {
+        setVerificationStatus(`Enrollment failed: ${error.message || 'Please try again with better lighting'}`);
+      }
       
       // We don't need this anymore as it's handled in the facial-verification service
       // facialVerification.dispatchVerificationEvent('enroll', false);
@@ -539,20 +558,22 @@ Please click "New Application" to register your face before continuing.`);
           <Button 
             onClick={enrollFace} 
             disabled={!videoActive || isProcessing || !isInitialized || isInitializing} 
-            className="flex items-center justify-center gap-2 py-3 h-auto"
+            className={`flex items-center justify-center gap-2 py-3 h-auto ${hasEnrolledFaces ? 'border-amber-500 hover:bg-amber-50 hover:text-amber-700' : ''}`}
+            title={hasEnrolledFaces ? "You are already registered. Please use Continue Application instead." : "First time users click here"}
           >
-            <UserPlus className="h-4 w-4" />
+            <UserPlus className={`h-4 w-4 ${hasEnrolledFaces ? 'text-amber-500' : ''}`} />
             <span>New Application</span>
+            {hasEnrolledFaces && <AlertTriangle className="h-3 w-3 ml-1 text-amber-500" />}
           </Button>
 
           <Button 
             onClick={authenticateFace} 
             disabled={!videoActive || isProcessing || !isInitialized || isInitializing || !hasEnrolledFaces} 
             variant="secondary" 
-            className="flex items-center justify-center gap-2 py-3 h-auto"
-            title={!hasEnrolledFaces ? "You must create a new application first" : ""}
+            className={`flex items-center justify-center gap-2 py-3 h-auto ${hasEnrolledFaces ? 'border-green-500 hover:bg-green-50 hover:text-green-700' : ''}`}
+            title={!hasEnrolledFaces ? "You must create a new application first" : "Click here to continue your existing application"}
           >
-            <User className="h-4 w-4" />
+            <User className={`h-4 w-4 ${hasEnrolledFaces ? 'text-green-500' : ''}`} />
             <span>Continue Application</span>
           </Button>
         </div>
@@ -588,6 +609,9 @@ Please click "New Application" to register your face before continuing.`);
           <div className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
             <p className="font-medium">Important Note:</p> 
             <p>If you haven't registered yet, you must click "New Application" first. The "Continue Application" button is only for returning users.</p>
+            {hasEnrolledFaces && (
+              <p className="mt-2 font-medium">You are already registered! Please use "Continue Application" to access your existing application. Creating a new application will not be allowed.</p>
+            )}
           </div>
         </div>
       </div>
