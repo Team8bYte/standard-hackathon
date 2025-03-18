@@ -240,17 +240,26 @@ export function dispatchVerificationEvent(action: string, success: boolean, user
 }
 
 // Enroll a face with associated user data
-export function enrollFace(descriptor: Float32Array, userData: UserData): string {
+export function enrollFace(descriptor: Float32Array, userData: UserData = {}): string {
   try {
     // Generate a unique ID for this face
     const faceId = generateFaceId();
     
+    // Add applicant and loan application IDs if not provided
+    const timestamp = new Date().toISOString();
+    const enhancedUserData = {
+      ...userData,
+      applicantId: userData.applicantId || `applicant-${Date.now()}`,
+      loanApplicationId: userData.loanApplicationId || `loan-${Date.now()}`,
+      timestamp
+    };
+    
     // Store the face descriptor and user data
     const storedFace: StoredFace = {
       id: faceId,
-      descriptor, // Keep as Float32Array for the in-memory version
-      userData,
-      createdAt: new Date().toISOString()
+      descriptor,
+      userData: enhancedUserData,
+      createdAt: timestamp
     };
     
     // Add to stored faces
@@ -262,7 +271,7 @@ export function enrollFace(descriptor: Float32Array, userData: UserData): string
     storedFaces = getStoredFaces();
     
     // Dispatch event for successful enrollment
-    dispatchVerificationEvent('enroll', true, userData);
+    dispatchVerificationEvent('enroll', true, enhancedUserData);
     
     console.log("Face enrolled successfully with ID:", faceId);
     return faceId;
