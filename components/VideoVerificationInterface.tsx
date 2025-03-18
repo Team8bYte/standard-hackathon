@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react"
 import FaceVerification from "@/components/FaceVerification"
 import VideoCapture from "@/components/VideoCapture"
+import FinancialInformation from "@/components/FinancialInformation"
+import DocumentVerification from "@/components/DocumentVerification"
+import SubmitApplication from "@/components/SubmitApplication"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, FileCheck, CreditCard, FileText, AlertTriangle, UserPlus, User } from "lucide-react"
+import { ArrowRight, FileCheck, CreditCard, FileText, AlertTriangle, UserPlus, User, Files } from "lucide-react"
 import * as facialVerification from "@/lib/facial-verification"
 
 export default function VideoVerificationInterface() {
@@ -104,6 +107,13 @@ export default function VideoVerificationInterface() {
     };
   }, []);
 
+  // Handle step completion
+  const handleStepComplete = () => {
+    if (currentStep < applicationSteps.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
   // Next step in application process
   const goToNextStep = () => {
     if (currentStep < applicationSteps.length) {
@@ -125,7 +135,8 @@ export default function VideoVerificationInterface() {
   const applicationSteps = [
     { id: 1, name: "Identity Verification", icon: FileCheck },
     { id: 2, name: "Financial Information", icon: CreditCard, disabled: !verificationComplete },
-    { id: 3, name: "Submit Application", icon: FileText, disabled: !verificationComplete }
+    { id: 3, name: "Document Verification", icon: Files, disabled: !verificationComplete },
+    { id: 4, name: "Submit Application", icon: FileText, disabled: !verificationComplete }
   ];
 
   return (
@@ -181,26 +192,50 @@ export default function VideoVerificationInterface() {
           </div>
         </div>
       ) : (
-        <div className="p-6 border rounded-lg bg-green-50 mb-6">
-          <div className="flex items-start">
-            <div className="bg-green-100 p-3 rounded-full mr-4">
-              <FileCheck className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-medium text-green-800">Identity Verification Complete</h2>
-              <p className="text-green-700 mt-1">
-                Your identity has been verified. You can now proceed with your loan application.
-              </p>
-              {userData && (
-                <div className="mt-2 p-3 bg-white rounded-md text-sm">
-                  <p><strong>Applicant ID:</strong> {userData.applicantId}</p>
-                  <p><strong>Application ID:</strong> {userData.loanApplicationId}</p>
-                  <p><strong>Started:</strong> {new Date(userData.timestamp).toLocaleString()}</p>
-                </div>
-              )}
+        <>
+          {/* Identity Verification Complete Message */}
+          <div className="p-6 border rounded-lg bg-green-50 mb-6">
+            <div className="flex items-start">
+              <div className="bg-green-100 p-3 rounded-full mr-4">
+                <FileCheck className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-medium text-green-800">Identity Verification Complete</h2>
+                <p className="text-green-700 mt-1">
+                  Your identity has been verified. You can now proceed with your loan application.
+                </p>
+                {userData && (
+                  <div className="mt-2 p-3 bg-white rounded-md text-sm">
+                    <p><strong>Applicant ID:</strong> {userData.applicantId}</p>
+                    <p><strong>Application ID:</strong> {userData.loanApplicationId}</p>
+                    <p><strong>Started:</strong> {new Date(userData.timestamp).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Financial Information Step */}
+          {currentStep === 2 && (
+            <div className="mt-8">
+              <FinancialInformation onComplete={handleStepComplete} />
+            </div>
+          )}
+          
+          {/* Document Verification Step */}
+          {currentStep === 3 && (
+            <div className="mt-8">
+              <DocumentVerification onComplete={handleStepComplete} />
+            </div>
+          )}
+          
+          {/* Submit Application Step */}
+          {currentStep === 4 && (
+            <div className="mt-8">
+              <SubmitApplication />
+            </div>
+          )}
+        </>
       )}
 
       <div className="mt-8 flex justify-between items-center">
@@ -281,32 +316,6 @@ export default function VideoVerificationInterface() {
           </Button>
         </div>
       </div>
-      
-      {/* Financial Information Step (Placeholder) */}
-      {currentStep === 2 && (
-        <div className="mt-8 p-6 border rounded-lg">
-          <h2 className="text-xl font-bold mb-4">Financial Information</h2>
-          <p className="mb-4 text-muted-foreground">
-            This section would collect financial details for your loan application.
-          </p>
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <p className="text-sm">Placeholder for financial information form</p>
-          </div>
-        </div>
-      )}
-      
-      {/* Submit Application Step (Placeholder) */}
-      {currentStep === 3 && (
-        <div className="mt-8 p-6 border rounded-lg">
-          <h2 className="text-xl font-bold mb-4">Submit Application</h2>
-          <p className="mb-4 text-muted-foreground">
-            Review your information and submit your loan application.
-          </p>
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <p className="text-sm">Placeholder for application review and submission</p>
-          </div>
-        </div>
-      )}
     </div>
   )
 } 
