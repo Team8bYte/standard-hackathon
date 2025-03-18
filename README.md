@@ -18,7 +18,8 @@ FinSaathAI for Standard Hackathon. Our dedicated team members are Team8bYte.
 ## Why FinSaathAI? 
 In today's era, where online banking and loan applications are becoming increasingly common, we saw an opportunity to bridge the gap between security and user convenience. Our mission is to revolutionize loan application processes by leveraging cutting-edge facial recognition technology to create a secure yet user-friendly experience that brings the best of both worlds together.
 
-![ui](https://firebasestorage.googleapis.com/v0/b/finsaathai-e0803.firebasestorage.app/o/ui.png?alt=media&token=8ae64d2f-ffe4-4a2e-8bdf-76c0ecfd6910)
+![UI](https://github.com/user-attachments/assets/69c34230-64f0-412d-aec5-7058df562b6e)
+
 <br> 
 
 ## Key Features
