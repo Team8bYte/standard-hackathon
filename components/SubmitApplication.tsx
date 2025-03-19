@@ -25,6 +25,7 @@ import {
   Save,
   CheckCircle2,
   AlertTriangle,
+  Send,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -40,26 +41,79 @@ import {
 import { useOurFormContext } from "@/contexts/FormContext";
 import { FINANCIAL_QUESTIONS } from "./FinancialInformation";
 
-export default function ApplicationForm() {
-  const { formData, updateFormData, updateAnswer } = useOurFormContext();
+type ApplicationStatus = "draft" | "submitted" | "approved" | "rejected";
+
+interface ApplicationData {
+  id: string;
+  applicantId: string;
+  personalInfo: {
+    fullName: string;
+    aadhaarNumber: string;
+    panNumber: string;
+    dateOfBirth: string;
+    gender: string;
+    address: string;
+  };
+  financialInfo: Array<{
+    question: string;
+    answer: string;
+  }>;
+  documents: Array<{
+    type: string;
+    name: string;
+    status: string;
+  }>;
+  status: ApplicationStatus;
+  submittedAt?: string;
+}
+
+export default function SubmitApplication() {
+  const { formData, updateFormData } = useOurFormContext();
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
+  const [dialogType, setDialogType] = useState<"save" | "submit">("save");
+  const [financialAnswers, setFinancialAnswers] = useState<Array<{ question: string; answer: string }>>([]);
 
+  // Load financial answers from localStorage
   useEffect(() => {
-    console.log(formData);
+    const savedAnswers = localStorage.getItem("financialAnswers");
+    if (savedAnswers) {
+      const answers = JSON.parse(savedAnswers);
+      setFinancialAnswers(answers);
+      
+      // Update form context with financial answers
+      answers.forEach((answer: { question: string; answer: string }, index: number) => {
+        updateFormData({ [`financial_answer_${index}`]: answer.answer });
+      });
+    }
   }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const applicationData: ApplicationData = {
+        id: `APP-${Date.now()}`,
+        applicantId: formData.applicantId || `APP-${Date.now()}`,
+        personalInfo: {
+          fullName: formData.full_name,
+          aadhaarNumber: formData.aadhaar_number,
+          panNumber: formData.pan_number,
+          dateOfBirth: formData.date_of_birth,
+          gender: formData.gender,
+          address: formData.address,
+        },
+        financialInfo: financialAnswers,
+        documents: [],
+        status: "draft",
+      };
 
-      // Here you would typically send the data to your backend
-      console.log("Saving form data:", formData);
-
+      // Save to localStorage for persistence
+      localStorage.setItem("applicationData", JSON.stringify(applicationData));
+      
       setIsSaved(true);
+      setDialogType("save");
       setShowDialog(true);
     } catch (error) {
       console.error("Error saving form:", error);
@@ -68,32 +122,74 @@ export default function ApplicationForm() {
     }
   };
 
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const applicationData: ApplicationData = {
+        id: `APP-${Date.now()}`,
+        applicantId: formData.applicantId || `APP-${Date.now()}`,
+        personalInfo: {
+          fullName: formData.full_name,
+          aadhaarNumber: formData.aadhaar_number,
+          panNumber: formData.pan_number,
+          dateOfBirth: formData.date_of_birth,
+          gender: formData.gender,
+          address: formData.address,
+        },
+        financialInfo: financialAnswers,
+        documents: [],
+        status: "submitted",
+        submittedAt: new Date().toISOString(),
+      };
+
+      // Save to localStorage for admin panel
+      const existingApplications = JSON.parse(localStorage.getItem("submittedApplications") || "[]");
+      existingApplications.push(applicationData);
+      localStorage.setItem("submittedApplications", JSON.stringify(existingApplications));
+
+      setDialogType("submit");
+      setShowDialog(true);
+    } catch (error) {
+      console.error("Error submitting application:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Form Saved Successfully!</AlertDialogTitle>
+            <AlertDialogTitle>
+              {dialogType === "save" ? "Application Saved Successfully!" : "Application Submitted Successfully!"}
+            </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Your application information has been saved. You can continue
-                  editing or submit your application when ready.
+                  {dialogType === "save" 
+                    ? "Your application information has been saved. You can continue editing or submit your application when ready."
+                    : "Your application has been submitted successfully. Our team will review your application and contact you soon."}
                 </p>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <div className="font-medium">Application Details:</div>
                   <div className="text-sm">Name: {formData.full_name}</div>
-                  <div className="text-sm">
-                    Aadhaar: {formData.aadhaar_number}
-                  </div>
+                  <div className="text-sm">Aadhaar: {formData.aadhaar_number}</div>
+                  <div className="text-sm">Application ID: {`APP-${Date.now()}`}</div>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowDialog(false)}>
-              Continue Editing
-            </AlertDialogAction>
+            {dialogType === "save" ? (
+              <AlertDialogAction onClick={() => setShowDialog(false)}>
+                Continue Editing
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction onClick={() => window.location.href = "/"}>
+                Return to Home
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -195,22 +291,17 @@ export default function ApplicationForm() {
             Financial Information
           </CardTitle>
           <CardDescription>
-            Please answer the following questions about your financial situation
+            Review your financial information collected from the previous section
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {FINANCIAL_QUESTIONS.map((question, index) => (
+            {financialAnswers.map((answer, index) => (
               <div key={index} className="space-y-2">
-                <Label htmlFor={`question-${index}`}>{question}</Label>
-                <Textarea
-                  id={`question-${index}`}
-                  value={formData.answers[index] || ""}
-                  onChange={(e) => updateAnswer(index, e.target.value)}
-                  placeholder="Type your answer here"
-                  className="resize-none"
-                  rows={2}
-                />
+                <Label>{answer.question}</Label>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm">{answer.answer}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -230,38 +321,43 @@ export default function ApplicationForm() {
               </p>
             )}
           </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button className="flex items-center gap-2" disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    Save Information
-                  </>
-                )}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Save Application Information
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to save the current information? Make
-                  sure all details are correct.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSave} 
+              variant="outline" 
+              className="flex items-center gap-2" 
+              disabled={isSaving || isSubmitting}
+            >
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Draft
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              className="flex items-center gap-2"
+              disabled={isSaving || isSubmitting || !isSaved}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Submit Application
+                </>
+              )}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     </div>
