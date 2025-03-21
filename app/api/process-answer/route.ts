@@ -5,7 +5,7 @@ const NEBIUS_API_URL = "https://api.studio.nebius.com/v1"
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, answer, context } = await request.json()
+    const { question, answer, context, language = "english" } = await request.json()
 
     // For chat interface, answer is optional
     if (!question) {
@@ -32,14 +32,18 @@ export async function POST(request: NextRequest) {
       ? `You are an expert loan manager trainer evaluating responses from trainee loan managers.
          You should provide detailed, constructive feedback on their answers, highlighting both strengths and areas for improvement.
          Focus on accuracy, completeness, and alignment with best practices in loan management.
-         Your feedback should be professional, encouraging, and specific to the loan management context.`
+         Your feedback should be professional, encouraging, and specific to the loan management context.
+         
+         IMPORTANT: You MUST provide your feedback in the ${language} language.`
       : `You are an AI Loan Manager Assistant providing professional guidance about loans and banking processes.
          Your responses should be:
          1. Concise and structured in bullet points
          2. Strictly professional in tone
          3. Focused on accurate financial information
          4. Free of casual language or emojis
-         5. Direct and clear`;
+         5. Direct and clear
+         
+         IMPORTANT: You MUST provide your response in the ${language} language.`;
 
     const userPrompt = answer
       ? `Context: ${context}
@@ -52,7 +56,8 @@ export async function POST(request: NextRequest) {
          3. Practical application
          4. Areas for improvement
          
-         Format your response in a clear, constructive manner.`
+         Format your response in a clear, constructive manner.
+         REMEMBER: Your entire response MUST be in the ${language} language.`
       : `Context: ${context}
          Question: ${question}
          
@@ -62,7 +67,8 @@ export async function POST(request: NextRequest) {
          3. Includes relevant requirements or conditions
          4. Concludes with next steps if applicable
          
-         Keep the response concise and structured.`;
+         Keep the response concise and structured.
+         REMEMBER: Your entire response MUST be in the ${language} language.`;
 
     try {
       const completion = await client.chat.completions.create({
