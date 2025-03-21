@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import FinancialInformation from "@/components/FinancialInformation"
+import DocumentVerification from "@/components/DocumentVerification"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { getCurrentUser } from "@/lib/user-data"
 
-export default function FinancialInformationPage() {
+export default function DocumentVerificationPage() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -56,7 +56,7 @@ export default function FinancialInformationPage() {
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back
       </Button>
-      <FinancialInformation />
+      <DocumentVerification />
     </div>
   )
 } 
