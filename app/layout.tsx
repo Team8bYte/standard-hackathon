@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { Home } from "lucide-react";
+import { Home, Heart } from "lucide-react";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuList, NavigationMenuLink } from "@/components/ui/navigation-menu";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -44,6 +44,14 @@ export default function RootLayout({
                       </NavigationMenuLink>
                       <NavigationMenuLink asChild>
                         <Link className="text-sm flex w-full items-center rounded px-2 py-1.5 hover:bg-accent hover:text-accent-foreground" href="/application-success">Success Page</Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link className="text-sm flex w-full items-center rounded px-2 py-1.5 hover:bg-accent hover:text-accent-foreground" href="/emotional-support">
+                          <Heart className="h-4 w-4 mr-2 text-red-500" /> Emotional Support
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link className="text-sm flex w-full items-center rounded px-2 py-1.5 hover:bg-accent hover:text-accent-foreground" href="/multi-support">Multi-Language Support</Link>
                       </NavigationMenuLink>
                     </div>
                   </NavigationMenuContent>
