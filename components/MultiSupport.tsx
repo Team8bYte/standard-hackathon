@@ -171,8 +171,18 @@ export default function MultiSupport() {
     if (!userAnswer.trim()) return
 
     setIsProcessing(true)
+    let timeoutId: NodeJS.Timeout | undefined;
+    
     try {
-      const response = await fetch("/api/process-answer", {
+      // Create a timeout Promise that rejects after 15 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('Request timed out'));
+        }, 15000);
+      });
+      
+      // Create the fetch Promise
+      const fetchPromise = fetch("/api/process-answer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -181,20 +191,40 @@ export default function MultiSupport() {
           question: SEGMENTS[currentSegment].question,
           answer: userAnswer,
           context: SEGMENTS[currentSegment].title,
-          language: selectedLanguage, // Pass the selected language to the API
+          language: selectedLanguage,
         }),
-      })
+      });
+      
+      // Race the fetch against the timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+      
+      // Clear timeout when we get a response
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get response');
+      }
 
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error)
-
-      setAiResponse(data.response)
+      setAiResponse(data.response);
     } catch (error) {
-      console.error("Error processing answer:", error)
+      console.error("Error processing answer:", error);
+      
+      // Provide a friendly error message to the user based on their language
+      const errorMessages = {
+        english: "Sorry, we couldn't process your answer at this time. Please try again later.",
+        hindi: "क्षमा करें, हम इस समय आपका उत्तर संसाधित नहीं कर सके। कृपया बाद में पुन: प्रयास करें।",
+        marathi: "क्षमस्व, आम्ही या वेळी तुमचे उत्तर प्रक्रिया करू शकलो नाही. कृपया नंतर पुन्हा प्रयत्न करा.",
+        gujarati: "માફ કરશો, અમે આ સમયે તમારો જવાબ પ્રક્રિયા કરી શક્યા નથી. કૃપા કરીને પછીથી ફરી પ્રયાસ કરો.",
+        tamil: "மன்னிக்கவும், இந்த நேரத்தில் உங்கள் பதிலை நாங்கள் செயலாக்க முடியவில்லை. பிறகு மீண்டும் முயற்சிக்கவும்."
+      };
+      
+      setAiResponse(errorMessages[selectedLanguage as keyof typeof errorMessages] || errorMessages.english);
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleNext = () => {
     if (currentSegment < SEGMENTS.length - 1) {
