@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Play, Pause, Mic, StopCircle, SkipForward, Loader2, AlertTriangle, MessageSquare } from "lucide-react"
+import { Play, Pause, Mic, StopCircle, SkipForward, Loader2, AlertTriangle, MessageSquare, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Define the segments with their questions and video paths
 const SEGMENTS = [
@@ -69,7 +70,17 @@ const SEGMENTS = [
   }
 ];
 
-export default function VideoGuidance() {
+interface VideoGuidanceProps {
+  fullWidth?: boolean;
+  showKeyboardShortcuts?: boolean;
+  onShortcutsChange?: (show: boolean) => void;
+}
+
+export default function VideoGuidance({ 
+  fullWidth = false,
+  showKeyboardShortcuts = false,
+  onShortcutsChange
+}: VideoGuidanceProps) {
   const [currentSegment, setCurrentSegment] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -85,6 +96,25 @@ export default function VideoGuidance() {
     monthlyIncome: 0,
     tenure: 0
   })
+  
+  // States for minimizing/maximizing sections
+  const [sidebarMinimized, setSidebarMinimized] = useState(fullWidth)
+  const [videoMaximized, setVideoMaximized] = useState(false)
+  const [feedbackMinimized, setFeedbackMinimized] = useState(false)
+  
+  // Keep internal state for shortcuts if not controlled by parent
+  const [internalShortcutsState, setInternalShortcutsState] = useState(false);
+  
+  // Use the showKeyboardShortcuts prop if provided
+  // Otherwise fall back to internal state
+  const isShowingShortcuts = onShortcutsChange ? showKeyboardShortcuts : internalShortcutsState;
+  const setIsShowingShortcuts = (show: boolean) => {
+    if (onShortcutsChange) {
+      onShortcutsChange(show);
+    } else {
+      setInternalShortcutsState(show);
+    }
+  }
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -268,6 +298,7 @@ export default function VideoGuidance() {
       const data = await response.json()
       setFeedback(data.feedback)
       setIsProcessing(false)
+      setFeedbackMinimized(false) // Show feedback when received
     } catch (error) {
       console.error('Error getting feedback:', error)
       setError('Failed to get feedback. Please try again.')
@@ -275,51 +306,124 @@ export default function VideoGuidance() {
     }
   }
 
+  // Update sidebarMinimized if fullWidth changes
+  useEffect(() => {
+    setSidebarMinimized(fullWidth);
+  }, [fullWidth]);
+
+  // Add this effect for keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in a text field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      // ? key for showing keyboard shortcuts
+      if (e.key === '?') {
+        setIsShowingShortcuts(!isShowingShortcuts);
+        return;
+      }
+      
+      // S key for toggling sidebar
+      if (e.key === 's' || e.key === 'S') {
+        setSidebarMinimized(prev => !prev);
+      }
+      
+      // V key for toggling video maximization
+      if (e.key === 'v' || e.key === 'V') {
+        setVideoMaximized(prev => !prev);
+      }
+      
+      // Space for play/pause (prevent default to avoid page scrolling)
+      if (e.key === ' ' && videoRef.current) {
+        e.preventDefault();
+        toggleVideo();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   return (
-    <div className="grid grid-cols-4 gap-6">
+    <div className={cn(
+      "grid gap-6 transition-all duration-300",
+      sidebarMinimized ? "grid-cols-1" : "grid-cols-4",
+      videoMaximized ? "grid-cols-1" : ""
+    )}>
       {/* Sections Sidebar */}
-      <Card className="col-span-1">
-        <CardHeader>
-          <CardTitle className="text-lg">Sections</CardTitle>
-          <CardDescription>Navigate through different topics</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[600px]">
-            {SEGMENTS.map((segment, index) => (
-              <button
-                key={segment.id}
-                onClick={() => {
-                  setCurrentSegment(index)
-                  setFeedback("")
-                }}
-                className={cn(
-                  "w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors",
-                  "border-l-2 flex flex-col gap-1",
-                  currentSegment === index 
-                    ? "border-l-primary bg-muted/50" 
-                    : "border-l-transparent"
-                )}
+      {!sidebarMinimized && (
+        <Card className="col-span-1 relative">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg">Sections</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setSidebarMinimized(true)}
+                className="h-8 w-8"
+                title="Minimize Sections (Press S)"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">{segment.title}</span>
-                  <span className="text-xs text-muted-foreground">{segment.timestamp}</span>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {segment.description}
-                </p>
-                {answers[segment.question] && (
-                  <div className="mt-1 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 w-fit">
-                    Completed
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+            <CardDescription>Navigate through different topics</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[600px]">
+              {SEGMENTS.map((segment, index) => (
+                <button
+                  key={segment.id}
+                  onClick={() => {
+                    setCurrentSegment(index)
+                    setFeedback("")
+                  }}
+                  className={cn(
+                    "w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors",
+                    "border-l-2 flex flex-col gap-1",
+                    currentSegment === index 
+                      ? "border-l-primary bg-muted/50" 
+                      : "border-l-transparent"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">{segment.title}</span>
+                    <span className="text-xs text-muted-foreground">{segment.timestamp}</span>
                   </div>
-                )}
-              </button>
-            ))}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {segment.description}
+                  </p>
+                  {answers[segment.question] && (
+                    <div className="mt-1 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 w-fit">
+                      Completed
+                    </div>
+                  )}
+                </button>
+              ))}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Content */}
-      <div className="col-span-3 space-y-6">
+      <div className={cn(
+        "space-y-6",
+        sidebarMinimized ? "col-span-full" : "col-span-3"
+      )}>
+        {sidebarMinimized && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setSidebarMinimized(false)}
+            className="mb-2"
+            title="Show Sections (Press S)"
+          >
+            <ChevronRight className="h-4 w-4 mr-2" />
+            Show Sections
+          </Button>
+        )}
+
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -327,27 +431,45 @@ export default function VideoGuidance() {
                 <CardTitle>{SEGMENTS[currentSegment].title}</CardTitle>
                 <CardDescription className="mt-1.5">{SEGMENTS[currentSegment].question}</CardDescription>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Section {currentSegment + 1} of {SEGMENTS.length}
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-muted-foreground">
+                  Section {currentSegment + 1} of {SEGMENTS.length}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setVideoMaximized(!videoMaximized)}
+                  className="h-8 w-8"
+                  title={videoMaximized ? "Normal size (Press V)" : "Full size (Press V)"}
+                >
+                  {videoMaximized ? 
+                    <Minimize2 className="h-4 w-4" /> : 
+                    <Maximize2 className="h-4 w-4" />
+                  }
+                </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {/* Video Player */}
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+              <div className={cn(
+                "relative rounded-lg overflow-hidden bg-black",
+                videoMaximized ? "aspect-video w-full max-w-full" : "aspect-video"
+              )}>
                 <video
                   ref={videoRef}
                   className="w-full h-full"
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
                   onEnded={() => setIsPlaying(false)}
+                  controls={videoMaximized}
                 />
               </div>
 
               {/* Video Controls */}
               <div className="flex justify-center gap-2">
-                <Button onClick={toggleVideo} variant="outline">
+                <Button onClick={toggleVideo} variant="outline" title="Play/Pause (Press Spacebar)">
                   {isPlaying ? (
                     <><Pause className="h-4 w-4 mr-2" /> Pause</>
                   ) : (
@@ -356,111 +478,169 @@ export default function VideoGuidance() {
                 </Button>
               </div>
 
-              {/* Recording Controls */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label>Your Answer</Label>
-                  <Button
-                    onClick={toggleRecording}
-                    variant={isRecording ? "destructive" : "outline"}
-                    disabled={isProcessing}
-                  >
-                    {isRecording ? (
-                      <><StopCircle className="h-4 w-4 mr-2" /> Stop Recording</>
-                    ) : (
-                      <><Mic className="h-4 w-4 mr-2" /> Start Recording</>
-                    )}
-                  </Button>
-                </div>
-
-                <Textarea
-                  value={answers[SEGMENTS[currentSegment].question] || ""}
-                  onChange={(e) => {
-                    setAnswers(prev => ({
-                      ...prev,
-                      [SEGMENTS[currentSegment].question]: e.target.value
-                    }))
-                    updateLoanEligibility(currentSegment, e.target.value)
-                  }}
-                  placeholder="Your answer will appear here after recording..."
-                  className="min-h-[100px]"
-                />
-
-                {isProcessing && (
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing your response...
+              {/* Recording Controls - Only show if video is not maximized */}
+              {!videoMaximized && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label>Your Answer</Label>
+                    <Button
+                      onClick={toggleRecording}
+                      variant={isRecording ? "destructive" : "outline"}
+                      disabled={isProcessing}
+                    >
+                      {isRecording ? (
+                        <><StopCircle className="h-4 w-4 mr-2" /> Stop Recording</>
+                      ) : (
+                        <><Mic className="h-4 w-4 mr-2" /> Start Recording</>
+                      )}
+                    </Button>
                   </div>
-                )}
 
-                {error && (
-                  <div className="flex items-center gap-2 text-destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    {error}
-                  </div>
-                )}
+                  <Textarea
+                    value={answers[SEGMENTS[currentSegment].question] || ""}
+                    onChange={(e) => {
+                      setAnswers(prev => ({
+                        ...prev,
+                        [SEGMENTS[currentSegment].question]: e.target.value
+                      }))
+                      updateLoanEligibility(currentSegment, e.target.value)
+                    }}
+                    placeholder="Your answer will appear here after recording..."
+                    className="min-h-[100px]"
+                  />
 
-                {feedback && (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">ILLMATIC's Feedback:</h4>
-                    <p className="text-sm text-muted-foreground">{feedback}</p>
-                  </div>
-                )}
+                  {isProcessing && (
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing your response...
+                    </div>
+                  )}
 
-                <div className="flex justify-between items-center">
-                  <Button
-                    onClick={handleNext}
-                    disabled={!answers[SEGMENTS[currentSegment].question] || isProcessing}
-                  >
-                    {isProcessing ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing</>
-                    ) : (
-                      <><MessageSquare className="h-4 w-4 mr-2" /> Get Feedback</>
-                    )}
-                  </Button>
-                  <div className="flex gap-2">
-                    {feedback && currentSegment === SEGMENTS.length - 1 && (
-                      <Button
-                        onClick={() => window.location.href = '/ai-chatbot'}
-                        variant="default"
-                      >
-                        Chat with ILLMATIC
-                      </Button>
-                    )}
-                    {feedback && (
-                      <Button
-                        onClick={() => {
-                          setFeedback("");
-                          if (currentSegment < SEGMENTS.length - 1) {
-                            setCurrentSegment(currentSegment + 1);
+                  {error && (
+                    <div className="flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Feedback section with minimize/maximize toggle */}
+                  {feedback && (
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-medium">ILLMATIC's Feedback:</h4>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setFeedbackMinimized(!feedbackMinimized)}
+                          className="h-6 w-6"
+                          title={feedbackMinimized ? "Expand feedback" : "Minimize feedback"}
+                        >
+                          {feedbackMinimized ? 
+                            <Maximize2 className="h-3 w-3" /> : 
+                            <Minimize2 className="h-3 w-3" />
                           }
-                        }}
-                        variant="outline"
-                      >
-                        {currentSegment < SEGMENTS.length - 1 ? (
-                          <>Next <SkipForward className="h-4 w-4 ml-2" /></>
-                        ) : (
-                          'Complete'
-                        )}
-                      </Button>
-                    )}
+                        </Button>
+                      </div>
+                      {!feedbackMinimized && (
+                        <p className="text-sm text-muted-foreground">{feedback}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <Button
+                      onClick={handleNext}
+                      disabled={!answers[SEGMENTS[currentSegment].question] || isProcessing}
+                    >
+                      {isProcessing ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing</>
+                      ) : (
+                        <><MessageSquare className="h-4 w-4 mr-2" /> Get Feedback</>
+                      )}
+                    </Button>
+                    <div className="flex gap-2">
+                      {feedback && currentSegment === SEGMENTS.length - 1 && (
+                        <Button
+                          onClick={() => window.location.href = '/ai-chatbot'}
+                          variant="default"
+                        >
+                          Chat with ILLMATIC
+                        </Button>
+                      )}
+                      {feedback && (
+                        <Button
+                          onClick={() => {
+                            setFeedback("");
+                            if (currentSegment < SEGMENTS.length - 1) {
+                              setCurrentSegment(currentSegment + 1);
+                            }
+                          }}
+                          variant="outline"
+                        >
+                          {currentSegment < SEGMENTS.length - 1 ? (
+                            <>Next <SkipForward className="h-4 w-4 ml-2" /></>
+                          ) : (
+                            'Complete'
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Progress Bar */}
-        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all"
-            style={{
-              width: `${((currentSegment + 1) / SEGMENTS.length) * 100}%`
-            }}
-          />
-        </div>
+        {/* Progress Bar - Only show if video is not maximized */}
+        {!videoMaximized && (
+          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{
+                width: `${((currentSegment + 1) / SEGMENTS.length) * 100}%`
+              }}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Keyboard shortcuts dialog */}
+      <Dialog open={isShowingShortcuts} onOpenChange={setIsShowingShortcuts}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+            <DialogDescription>
+              Use these keyboard shortcuts to navigate the dashboard quickly
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="flex items-center gap-4">
+              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">F</kbd>
+              <span className="text-sm">Toggle full width mode</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">S</kbd>
+              <span className="text-sm">Toggle sections sidebar</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">V</kbd>
+              <span className="text-sm">Toggle video size</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd>
+              <span className="text-sm">Play/Pause video</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">?</kbd>
+              <span className="text-sm">Show/hide this guide</span>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Press <kbd className="px-1 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">?</kbd> anytime to see these shortcuts
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

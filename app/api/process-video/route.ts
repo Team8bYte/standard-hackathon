@@ -168,11 +168,12 @@ async function transcribeVideo(videoPath: string): Promise<string> {
 }
 
 // Process transcription with Llama LLM
-async function processTranscriptionWithAI(transcription: string): Promise<any> {
+async function processTranscriptionWithAI(transcription: string, specificQuestion?: string): Promise<any> {
   try {
     console.log('Processing transcription:', {
       length: transcription.length,
-      wordCount: transcription.split(/\s+/).length
+      wordCount: transcription.split(/\s+/).length,
+      specificQuestion: specificQuestion || 'none'
     });
     
     if (!process.env.NEBIUS_API_KEY) {
@@ -183,32 +184,64 @@ async function processTranscriptionWithAI(transcription: string): Promise<any> {
     You will receive a transcription and extract answers to specific questions.
     Always respond in valid JSON format with the structure specified in the user's prompt.`;
     
-    const userPrompt = `
-      Analyze the following transcription of a video where someone answers financial questions.
-      Questions asked:
-      ${FINANCIAL_QUESTIONS.join('\n')}
-      
-      Transcription:
-      ${transcription}
-      
-      Extract the relevant answer for each question if present. Format your response as a JSON object with this exact structure:
-      {
-        "answers": [
-          {
-            "question": "question text",
-            "answer": "extracted answer",
-            "confidence": number,
-            "needsRerecording": boolean
-          }
-        ]
-      }
-      
-      For each answer:
-      1. Set "answer" to the extracted text or "Not provided" if missing
-      2. Set "confidence" to a number 0-100 based on clarity and completeness
-      3. Set "needsRerecording" to true if confidence < 70
-      
-      Ensure your response is valid JSON.`;
+    let userPrompt = '';
+    
+    if (specificQuestion) {
+      // For a specific question, focus only on that question
+      userPrompt = `
+        Analyze the following transcription of a video where someone answers a specific financial question.
+        
+        Question: "${specificQuestion}"
+        
+        Transcription: "${transcription}"
+        
+        Extract the relevant answer for this specific question. Format your response as a JSON object with this exact structure:
+        {
+          "answers": [
+            {
+              "question": "${specificQuestion}",
+              "answer": "extracted answer",
+              "confidence": number,
+              "needsRerecording": boolean
+            }
+          ]
+        }
+        
+        For the answer:
+        1. Set "answer" to the extracted text or "Not provided" if missing
+        2. Set "confidence" to a number 0-100 based on clarity and completeness
+        3. Set "needsRerecording" to true if confidence < 70
+        
+        Ensure your response is valid JSON.`;
+    } else {
+      // For all questions (original implementation)
+      userPrompt = `
+        Analyze the following transcription of a video where someone answers financial questions.
+        Questions asked:
+        ${FINANCIAL_QUESTIONS.join('\n')}
+        
+        Transcription:
+        ${transcription}
+        
+        Extract the relevant answer for each question if present. Format your response as a JSON object with this exact structure:
+        {
+          "answers": [
+            {
+              "question": "question text",
+              "answer": "extracted answer",
+              "confidence": number,
+              "needsRerecording": boolean
+            }
+          ]
+        }
+        
+        For each answer:
+        1. Set "answer" to the extracted text or "Not provided" if missing
+        2. Set "confidence" to a number 0-100 based on clarity and completeness
+        3. Set "needsRerecording" to true if confidence < 70
+        
+        Ensure your response is valid JSON.`;
+    }
 
     console.log('Sending request to Nebius API...');
     const response = await axios.post(
@@ -282,6 +315,7 @@ export async function POST(request: NextRequest) {
     
     const formData = await request.formData();
     const video = formData.get("video") as File;
+    const specificQuestion = formData.get("specificQuestion") as string || undefined;
 
     if (!video) {
       return NextResponse.json(
@@ -293,7 +327,8 @@ export async function POST(request: NextRequest) {
     console.log('Received video:', {
       name: video.name,
       type: video.type,
-      size: video.size
+      size: video.size,
+      specificQuestion: specificQuestion || 'none'
     });
 
     const maxSize = 50 * 1024 * 1024; // 50MB
@@ -330,7 +365,7 @@ export async function POST(request: NextRequest) {
         words: transcription.split(/\s+/).length
       });
 
-      const processedAnswers = await processTranscriptionWithAI(transcription);
+      const processedAnswers = await processTranscriptionWithAI(transcription, specificQuestion);
       console.log('AI processing completed');
 
       return NextResponse.json({
