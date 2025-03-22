@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import FinancialInformation from "@/components/FinancialInformation"
+import FaceVerification from "@/components/FaceVerification"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { getCurrentUser } from "@/lib/user-data"
 
-export default function FinancialInformationPage() {
+export default function FaceVerificationPage() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [videoActive, setVideoActive] = useState(true)
 
   useEffect(() => {
     // Check if user is authenticated
@@ -56,7 +57,7 @@ export default function FinancialInformationPage() {
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back
       </Button>
-      <FinancialInformation />
+      <FaceVerification videoActive={videoActive} />
     </div>
   )
 } 

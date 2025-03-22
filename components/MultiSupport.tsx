@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Play, Pause, SkipForward, MessageSquare, Video, Globe2, Loader2, AlertTriangle } from "lucide-react"
 
-type Language = "english" | "hindi" | "marathi" | "gujarati"
+type Language = "english" | "hindi" | "marathi" | "gujarati" | "tamil"
 
 const SEGMENTS = [
   {
@@ -17,7 +17,8 @@ const SEGMENTS = [
       english: "/videos/support/v1/english.mp4",
       hindi: "/videos/support/v1/hindi.mp4",
       marathi: "/videos/support/v1/marathi.mp4",
-      gujarati: "/videos/support/v1/guju.mp4"
+      gujarati: "/videos/support/v1/guju.mp4",
+      tamil: "/videos/support/tamil.mp4"
     }
   },
   {
@@ -28,7 +29,8 @@ const SEGMENTS = [
       english: "/videos/support/v2/english.mp4",
       hindi: "/videos/support/v2/hindi.mp4",
       marathi: "/videos/support/v2/marathi.mp4",
-      gujarati: "/videos/support/v2/guju.mp4"
+      gujarati: "/videos/support/v2/guju.mp4",
+      tamil: "/videos/support/tamil.mp4"
     }
   },
   {
@@ -39,7 +41,8 @@ const SEGMENTS = [
       english: "/videos/support/v3/english.mp4",
       hindi: "/videos/support/v3/hindi.mp4",
       marathi: "/videos/support/v3/marathi.mp4",
-      gujarati: "/videos/support/v3/guju.mp4"
+      gujarati: "/videos/support/v3/guju.mp4",
+      tamil: "/videos/support/tamil.mp4"
     }
   },
   {
@@ -50,7 +53,8 @@ const SEGMENTS = [
       english: "/videos/support/v4/english.mp4",
       hindi: "/videos/support/v4/hindi.mp4",
       marathi: "/videos/support/v4/marathi.mp4",
-      gujarati: "/videos/support/v4/guju.mp4"
+      gujarati: "/videos/support/v4/guju.mp4",
+      tamil: "/videos/support/tamil.mp4"
     }
   },
   {
@@ -61,10 +65,50 @@ const SEGMENTS = [
       english: "/videos/support/v5/english.mp4",
       hindi: "/videos/support/v5/hindi.mp4",
       marathi: "/videos/support/v5/marathi.mp4",
-      gujarati: "/videos/support/v5/guju.mp4"
+      gujarati: "/videos/support/v5/guju.mp4",
+      tamil: "/videos/support/tamil.mp4"
     }
   }
 ]
+
+// Language labels for questions (to display questions in selected language)
+const LANGUAGE_QUESTIONS = {
+  english: {
+    "Loan Purpose": "What is the purpose of your loan?",
+    "Income & Employment": "What is your annual income and current employment?",
+    "Document Upload": "Please upload your Aadhaar, PAN, and salary slip for verification",
+    "CIBIL Score": "What is your CIBIL score?",
+    "Disbursement Preference": "If the loan is approved, would you like to receive the amount directly in your bank account or through demand draft?"
+  },
+  hindi: {
+    "Loan Purpose": "आपके ऋण का उद्देश्य क्या है?",
+    "Income & Employment": "आपकी वार्षिक आय और वर्तमान रोजगार क्या है?",
+    "Document Upload": "कृपया सत्यापन के लिए अपना आधार, पैन और वेतन पर्ची अपलोड करें",
+    "CIBIL Score": "आपका सिबिल स्कोर क्या है?",
+    "Disbursement Preference": "यदि ऋण स्वीकृत हो जाता है, तो क्या आप सीधे अपने बैंक खाते में या डिमांड ड्राफ्ट के माध्यम से राशि प्राप्त करना चाहेंगे?"
+  },
+  marathi: {
+    "Loan Purpose": "तुमच्या कर्जाचा हेतू काय आहे?",
+    "Income & Employment": "तुमचे वार्षिक उत्पन्न आणि सध्याचे रोजगार काय आहे?",
+    "Document Upload": "कृपया सत्यापनासाठी तुमचा आधार, पॅन आणि पगार स्लिप अपलोड करा",
+    "CIBIL Score": "तुमचा सिबिल स्कोर काय आहे?",
+    "Disbursement Preference": "कर्ज मंजूर झाल्यास, तुम्हाला थेट तुमच्या बँक खात्यात किंवा डिमांड ड्राफ्टद्वारे रक्कम मिळवायला आवडेल का?"
+  },
+  gujarati: {
+    "Loan Purpose": "તમારી લોનનો હેતુ શું છે?",
+    "Income & Employment": "તમારી વાર્ષિક આવક અને વર્તમાન રોજગાર શું છે?",
+    "Document Upload": "કૃપા કરીને ચકાસણી માટે તમારો આધાર, પાન અને પગાર સ્લિપ અપલોડ કરો",
+    "CIBIL Score": "તમારો સિબિલ સ્કોર શું છે?",
+    "Disbursement Preference": "જો લોન મંજૂર થાય, તો શું તમે સીધા તમારા બેંક ખાતામાં અથવા ડિમાન્ડ ડ્રાફ્ટ દ્વારા રકમ મેળવવા માંગો છો?"
+  },
+  tamil: {
+    "Loan Purpose": "உங்கள் கடனின் நோக்கம் என்ன?",
+    "Income & Employment": "உங்கள் ஆண்டு வருமானம் மற்றும் தற்போதைய வேலை என்ன?",
+    "Document Upload": "சரிபார்ப்புக்காக உங்கள் ஆதார், பான் மற்றும் சம்பளச் சீட்டை பதிவேற்றவும்",
+    "CIBIL Score": "உங்கள் சிபில் மதிப்பெண் என்ன?",
+    "Disbursement Preference": "கடன் அங்கீகரிக்கப்பட்டால், தொகையை நேரடியாக உங்கள் வங்கிக் கணக்கில் அல்லது டிமாண்ட் டிராஃப்ட் மூலம் பெற விரும்புகிறீர்களா?"
+  }
+}
 
 export default function MultiSupport() {
   const [currentSegment, setCurrentSegment] = useState(0)
@@ -119,14 +163,26 @@ export default function MultiSupport() {
       videoRef.current.currentTime = 0
       setIsPlaying(false)
     }
+    // Clear previous responses when language changes
+    setAiResponse("")
   }
 
   const processAnswer = async () => {
     if (!userAnswer.trim()) return
 
     setIsProcessing(true)
+    let timeoutId: NodeJS.Timeout | undefined;
+    
     try {
-      const response = await fetch("/api/process-answer", {
+      // Create a timeout Promise that rejects after 15 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('Request timed out'));
+        }, 15000);
+      });
+      
+      // Create the fetch Promise
+      const fetchPromise = fetch("/api/process-answer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,19 +191,40 @@ export default function MultiSupport() {
           question: SEGMENTS[currentSegment].question,
           answer: userAnswer,
           context: SEGMENTS[currentSegment].title,
+          language: selectedLanguage,
         }),
-      })
+      });
+      
+      // Race the fetch against the timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+      
+      // Clear timeout when we get a response
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get response');
+      }
 
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error)
-
-      setAiResponse(data.response)
+      setAiResponse(data.response);
     } catch (error) {
-      console.error("Error processing answer:", error)
+      console.error("Error processing answer:", error);
+      
+      // Provide a friendly error message to the user based on their language
+      const errorMessages = {
+        english: "Sorry, we couldn't process your answer at this time. Please try again later.",
+        hindi: "क्षमा करें, हम इस समय आपका उत्तर संसाधित नहीं कर सके। कृपया बाद में पुन: प्रयास करें।",
+        marathi: "क्षमस्व, आम्ही या वेळी तुमचे उत्तर प्रक्रिया करू शकलो नाही. कृपया नंतर पुन्हा प्रयत्न करा.",
+        gujarati: "માફ કરશો, અમે આ સમયે તમારો જવાબ પ્રક્રિયા કરી શક્યા નથી. કૃપા કરીને પછીથી ફરી પ્રયાસ કરો.",
+        tamil: "மன்னிக்கவும், இந்த நேரத்தில் உங்கள் பதிலை நாங்கள் செயலாக்க முடியவில்லை. பிறகு மீண்டும் முயற்சிக்கவும்."
+      };
+      
+      setAiResponse(errorMessages[selectedLanguage as keyof typeof errorMessages] || errorMessages.english);
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleNext = () => {
     if (currentSegment < SEGMENTS.length - 1) {
@@ -159,6 +236,13 @@ export default function MultiSupport() {
         setIsPlaying(false)
       }
     }
+  }
+  
+  // Get the localized question for the current segment and language
+  const getLocalizedQuestion = () => {
+    const segmentTitle = SEGMENTS[currentSegment].title;
+    const languageQuestions = LANGUAGE_QUESTIONS[selectedLanguage] || LANGUAGE_QUESTIONS["english"];
+    return languageQuestions[segmentTitle as keyof typeof languageQuestions] || SEGMENTS[currentSegment].question;
   }
 
   return (
@@ -181,6 +265,7 @@ export default function MultiSupport() {
             <option value="hindi">हिंदी</option>
             <option value="marathi">मराठी</option>
             <option value="gujarati">ગુજરાતી</option>
+            <option value="tamil">தமிழ்</option>
           </select>
         </div>
       </div>
@@ -236,13 +321,17 @@ export default function MultiSupport() {
         <CardHeader>
           <CardTitle>Question {currentSegment + 1}</CardTitle>
           <CardDescription>
-            {SEGMENTS[currentSegment].question}
+            {getLocalizedQuestion()}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <Textarea
-              placeholder="Type your answer here..."
+              placeholder={selectedLanguage === "english" ? "Type your answer here..." : 
+                selectedLanguage === "hindi" ? "अपना उत्तर यहां टाइप करें..." :
+                selectedLanguage === "marathi" ? "तुमचे उत्तर येथे टाइप करा..." :
+                selectedLanguage === "gujarati" ? "તમારો જવાબ અહીં ટાઇપ કરો..." :
+                "உங்கள் பதிலை இங்கே தட்டச்சு செய்யவும்..."}
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               className="min-h-[100px]"

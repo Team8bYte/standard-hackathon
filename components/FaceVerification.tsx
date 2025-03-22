@@ -25,8 +25,10 @@ import { useToast } from "./ui/use-toast";
 
 export default function FaceVerification({
   videoActive,
+  webcamRef,
 }: {
   videoActive: boolean;
+  webcamRef: React.RefObject<Webcam | null>;
 }) {
   const [verificationStatus, setVerificationStatus] = useState<string | null>(
     null,
@@ -44,7 +46,6 @@ export default function FaceVerification({
     action?: () => void;
     actionText?: string;
   }>({ title: "", description: "" });
-  const webcamRef = useRef<Webcam>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [hasEnrolledFaces, setHasEnrolledFaces] = useState(false);
@@ -662,26 +663,26 @@ export default function FaceVerification({
           )}
 
           {/* Webcam component */}
-          <div className={videoActive ? "block" : "hidden"}>
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              screenshotFormat="image/jpeg"
-              videoConstraints={{
-                width: 640,
-                height: 480,
-                facingMode: "user",
-              }}
-              className={
-                isProcessing ? "hidden" : "w-full h-auto rounded-lg border mt-4"
-              }
-              screenshotQuality={1}
-              imageSmoothing={true}
-              minScreenshotWidth={640}
-              minScreenshotHeight={480}
-              forceScreenshotSourceSize={true}
-            />
-          </div>
+          {/* <div className={videoActive ? "block" : "hidden"}> */}
+          {/*   <Webcam */}
+          {/*     ref={webcamRef} */}
+          {/*     audio={false} */}
+          {/*     screenshotFormat="image/jpeg" */}
+          {/*     videoConstraints={{ */}
+          {/*       width: 640, */}
+          {/*       height: 480, */}
+          {/*       facingMode: "user", */}
+          {/*     }} */}
+          {/*     className={ */}
+          {/*       isProcessing ? "hidden" : "w-full h-auto rounded-lg border mt-4" */}
+          {/*     } */}
+          {/*     screenshotQuality={1} */}
+          {/*     imageSmoothing={true} */}
+          {/*     minScreenshotWidth={640} */}
+          {/*     minScreenshotHeight={480} */}
+          {/*     forceScreenshotSourceSize={true} */}
+          {/*   /> */}
+          {/* </div> */}
 
           {/* Canvas for image processing - hidden */}
           <canvas ref={canvasRef} className="hidden" width="640" height="480" />
@@ -809,4 +810,3 @@ export default function FaceVerification({
     </div>
   );
 }
-

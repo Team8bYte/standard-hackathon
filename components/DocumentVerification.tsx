@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Trash2,
   RefreshCw,
+  Camera,
+  XCircle,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -25,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useOurFormContext } from "@/contexts/FormContext";
+import Webcam from "react-webcam";
 
 type Document = {
   id: string;
@@ -75,6 +78,9 @@ export default function DocumentVerification({
     description: "",
   });
   const [isComplete, setIsComplete] = useState(false);
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [currentDocType, setCurrentDocType] = useState<string | null>(null);
+  const webcamRef = useRef<Webcam>(null);
 
   const { updateFormData } = useOurFormContext();
 
@@ -202,6 +208,51 @@ export default function DocumentVerification({
     fileInput.click();
   };
 
+  // Toggle webcam for a specific document type
+  const toggleWebcam = (type: string) => {
+    if (webcamActive && currentDocType === type) {
+      setWebcamActive(false);
+      setCurrentDocType(null);
+    } else {
+      setWebcamActive(true);
+      setCurrentDocType(type);
+    }
+  };
+
+  // Capture image from webcam
+  const captureImage = () => {
+    if (!webcamRef.current) return;
+    
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc || !currentDocType) return;
+    
+    // Convert base64 to file
+    const blob = dataURLtoBlob(imageSrc);
+    const file = new File([blob], `${currentDocType}_capture.jpg`, { type: 'image/jpeg' });
+    
+    // Process the captured image
+    handleFileUpload(currentDocType, file);
+    
+    // Close webcam after capture
+    setWebcamActive(false);
+    setCurrentDocType(null);
+  };
+
+  // Convert data URL to Blob
+  const dataURLtoBlob = (dataurl: string) => {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    
+    return new Blob([u8arr], { type: mime });
+  };
+
   return (
     <div className="space-y-6">
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
@@ -226,6 +277,57 @@ export default function DocumentVerification({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {webcamActive && currentDocType && (
+            <div className="mb-6 border rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-medium">
+                  Take a picture of your {
+                    REQUIRED_DOCUMENTS.find(doc => doc.type === currentDocType)?.name
+                  }
+                </h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => toggleWebcam(currentDocType)}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+              
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{
+                  width: 640,
+                  height: 480,
+                  facingMode: "environment", // Use back camera for documents
+                }}
+                className="w-full h-auto rounded-lg border"
+                screenshotQuality={1}
+              />
+              
+              <div className="mt-3 flex justify-center">
+                <Button onClick={captureImage}>
+                  <Camera className="h-4 w-4 mr-2" />
+                  Capture Image
+                </Button>
+              </div>
+              
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <h5 className="text-sm font-medium text-blue-700 mb-2">Tips for a clear document photo:</h5>
+                <ul className="text-xs text-blue-600 list-disc pl-5 space-y-1">
+                  <li>Place your document on a dark, non-reflective surface</li>
+                  <li>Ensure all four corners of the document are visible</li>
+                  <li>Make sure text is clearly readable</li>
+                  <li>Avoid shadows and glare on the document</li>
+                  <li>Hold your device steady when taking the photo</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           <ScrollArea className="rounded-md border p-4">
             <div className="space-y-4">
               {REQUIRED_DOCUMENTS.map((doc) => {
@@ -244,8 +346,8 @@ export default function DocumentVerification({
                         </p>
                       </div>
 
-                      {!uploadedDoc && (
-                        <div>
+                      {!uploadedDoc && !webcamActive && (
+                        <div className="flex space-x-2">
                           <input
                             type="file"
                             id={`file-${doc.type}`}
@@ -264,6 +366,14 @@ export default function DocumentVerification({
                           >
                             <Upload className="h-4 w-4 mr-2" />
                             Upload
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleWebcam(doc.type)}
+                          >
+                            <Camera className="h-4 w-4 mr-2" />
+                            Take Photo
                           </Button>
                         </div>
                       )}
@@ -307,13 +417,15 @@ export default function DocumentVerification({
                         </div>
 
                         {uploadedDoc.status === "uploading" && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Uploading...
+                          <p className="text-xs text-muted-foreground mt-2 flex items-center">
+                            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                            Uploading document...
                           </p>
                         )}
                         {uploadedDoc.status === "processing" && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Uploading...
+                          <p className="text-xs text-blue-500 mt-2 flex items-center">
+                            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                            Processing document and extracting information...
                           </p>
                         )}
                         {uploadedDoc.status === "failed" &&
